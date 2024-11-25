@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 import pandas as pd
+import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 
 # Initialize FastAPI app
@@ -154,3 +155,5 @@ def get_type_of_deaths(year: int, state: str):
     result = typewise_deaths.to_dict(orient="records")
 
     return {"type_of_deaths": result}
+if __name__ == "__main__": 
+    uvicorn.run(app, host="0.0.0.0", port=80000)
