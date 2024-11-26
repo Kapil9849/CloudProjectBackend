@@ -2,7 +2,8 @@ from fastapi import FastAPI
 import pandas as pd
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
-
+import requests
+from io import StringIO
 # Initialize FastAPI app
 app = FastAPI()
 
@@ -14,7 +15,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-df = pd.read_csv("assets/gun_violence_usa.csv")
+# Global variable to store the DataFrame
+df = None
+
+# Public URL of the dataset
+PUBLIC_URL = "https://datasetstoragecloud.s3.us-east-1.amazonaws.com/gun_violence_usa.csv"
+
 # Map numeric months to their names
 month_map = {
     1: "January", 2: "February", 3: "March", 4: "April", 
@@ -32,8 +38,24 @@ states_dict = {
     "Montana": "MT",    "Mississippi": "MS",    "Oklahoma": "OK",    "Pennsylvania": "PA",    "Nebraska": "NE",    "Idaho": "ID"
 }
 
-# Add a new column for month names
-df["MonthName"] = df["Month"].map(month_map)
+@app.on_event("startup")
+async def load_dataset():
+    global df
+    try:
+        # Fetch the CSV data from the public URL
+        response = requests.get(PUBLIC_URL)
+        response.raise_for_status()  # Raise exception for HTTP errors
+
+        # Read the content into a Pandas DataFrame
+        data = StringIO(response.text)
+        df = pd.read_csv(data)
+        print("Dataset loaded successfully on startup.")
+        # Add a new column for month names
+        df["MonthName"] = df["Month"].map(month_map)
+    except Exception as e:
+        print(f"Failed to load dataset: {e}")
+
+# df = pd.read_csv("assets/gun_violence_usa.csv")
 
 @app.get("/getstates")
 def get_states():

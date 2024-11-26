@@ -4,3 +4,5 @@ uvicorn
 gunicorn
 pydantic
 pandas
+requests
+io
